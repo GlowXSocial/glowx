@@ -29,18 +29,34 @@ export default async function Dashboard() {
   let total = 0;
   let convertidos = 0;
   let dbOk = true;
+  let fetchError: string | null = null;
+
+  // seleção explícita de colunas — evita quebrar a listagem se a tabela ganhar
+  // alguma coluna que o PostgREST não consiga serializar (causa comum de
+  // "o número aparece, mas os dados não").
+  const LEAD_COLS =
+    'id,name,email,phone,interest,message,source,status,created_at';
 
   try {
     sb = supabaseAdmin();
     const [r1, r2, r3] = await Promise.all([
-      sb.from('leads').select('*').order('created_at', { ascending: false }).limit(500),
+      sb.from('leads').select(LEAD_COLS).order('created_at', { ascending: false }).limit(500),
       sb.from('leads').select('*', { count: 'exact', head: true }),
       sb
         .from('leads')
         .select('*', { count: 'exact', head: true })
         .eq('status', 'convertido'),
     ]);
-    leads = (r1.data || []) as Lead[];
+    if (r1.error) {
+      // antes o erro era engolido: o count continuava funcionando e só o
+      // número aparecia. Agora mostramos o motivo real.
+      console.error('Dashboard: erro ao ler leads:', r1.error.message);
+      fetchError = r1.error.message;
+    } else {
+      leads = (r1.data || []) as Lead[];
+    }
+    if (r2.error) console.error('Dashboard: erro no total:', r2.error.message);
+    if (r3.error) console.error('Dashboard: erro nos convertidos:', r3.error.message);
     total = r2.count || 0;
     convertidos = r3.count || 0;
   } catch (e: any) {
@@ -87,6 +103,17 @@ export default async function Dashboard() {
         <div className="rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-700">
           ⚠️ Banco de dados ainda não conectado. Configure as variáveis do Supabase e rode o
           <code className="mx-1 rounded bg-amber-100 px-1">supabase/schema.sql</code> no seu projeto para começar a capturar leads.
+        </div>
+      )}
+
+      {fetchError && (
+        <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
+          ⚠️ Não foi possível carregar os dados dos leads:{' '}
+          <code className="rounded bg-red-100 px-1">{fetchError}</code>
+          <div className="mt-1 text-xs text-red-500">
+            Verifique no painel do Supabase se a tabela <code>leads</code> tem as colunas
+            esperadas (id, name, email, phone, interest, message, source, status, created_at).
+          </div>
         </div>
       )}
 

@@ -39,6 +39,11 @@ export default async function LeadsPage({
   let counts: Record<string, number> = { novo: 0, contato: 0, convertido: 0, perdido: 0 };
   let total = 0;
   let dbOk = true;
+  let fetchError: string | null = null;
+
+  // seleção explícita de colunas (mesmo motivo do dashboard)
+  const LEAD_COLS =
+    'id,name,email,phone,interest,message,source,status,created_at';
 
   try {
     const sb = supabaseAdmin();
@@ -46,11 +51,15 @@ export default async function LeadsPage({
       ? (searchParams.status as string)
       : null;
 
-    const listQ = sb.from('leads').select('*').order('created_at', { ascending: false }).limit(1000);
+    const listQ = sb.from('leads').select(LEAD_COLS).order('created_at', { ascending: false }).limit(1000);
     if (filter) listQ.eq('status', filter);
     const { data, error } = await listQ;
-    if (error) throw error;
-    leads = (data || []) as Lead[];
+    if (error) {
+      console.error('Leads: erro ao ler leads:', error.message);
+      fetchError = error.message;
+    } else {
+      leads = (data || []) as Lead[];
+    }
 
     const { count: totalAll } = await sb
       .from('leads')
@@ -89,6 +98,17 @@ export default async function LeadsPage({
         <div className="rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-700">
           ⚠️ Banco de dados indisponível. Verifique as variáveis do Supabase (a project pode ter
           pausado no free tier — ative de novo no painel do Supabase).
+        </div>
+      )}
+
+      {fetchError && (
+        <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
+          ⚠️ Não foi possível carregar os leads:{' '}
+          <code className="rounded bg-red-100 px-1">{fetchError}</code>
+          <div className="mt-1 text-xs text-red-500">
+            Confira no painel do Supabase se a tabela <code>leads</code> tem as colunas
+            esperadas (id, name, email, phone, interest, message, source, status, created_at).
+          </div>
         </div>
       )}
 
