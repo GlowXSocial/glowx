@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase';
 import { updateLeadStatusAction, deleteLeadAction } from '@/app/actions';
 import LeadRow from './LeadRow';
+import AutoRefresh from './AutoRefresh';
 
 export const dynamic = 'force-dynamic';
 
@@ -79,6 +80,8 @@ export default async function Dashboard() {
         <h1 className="text-2xl font-extrabold">Dashboard</h1>
         <p className="text-sm text-slate-500">Acompanhe leads e conversão da sua LP.</p>
       </div>
+
+      <AutoRefresh />
 
       {!dbOk && (
         <div className="rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-700">
