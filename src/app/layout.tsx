@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import MetaPixel from './MetaPixel';
 
 export const metadata: Metadata = {
   title: 'GlowX — Marketing para Estética',
@@ -14,7 +15,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pt-BR">
-      <body className="font-sans">{children}</body>
+      <body className="font-sans">
+        {children}
+        <MetaPixel />
+      </body>
     </html>
   );
 }
