@@ -1,5 +1,6 @@
 import { getContent } from '@/lib/content';
 import LeadForm from './LeadForm';
+import SiteNav from './SiteNav';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,35 +25,7 @@ export default async function Home() {
   return (
     <main style={styleVars}>
       {/* NAV */}
-      <header className="sticky top-0 z-40 border-b border-glow-100/60 bg-white/80 backdrop-blur">
-        <nav className="glow-section flex h-16 items-center justify-between">
-          <a href="#topo" className="flex items-center gap-2 font-extrabold">
-            {c.brand.logoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={c.brand.logoUrl}
-                alt={c.brand.name}
-                className="h-9 w-auto"
-              />
-            ) : (
-              <span className="text-2xl">
-                <span className="bg-gradient-to-r from-glow-700 to-glow-400 bg-clip-text text-transparent">
-                  {c.brand.name}
-                </span>
-              </span>
-            )}
-          </a>
-          <div className="hidden items-center gap-8 text-sm font-medium text-slate-600 md:flex">
-            <a href="#servicos" className="hover:text-glow-600">Serviços</a>
-            <a href="#diferenciais" className="hover:text-glow-600">Diferenciais</a>
-            <a href="#sobre" className="hover:text-glow-600">Sobre</a>
-            <a href="#contato" className="hover:text-glow-600">Contato</a>
-          </div>
-          <a href="#contato" className="glow-btn !px-5 !py-2.5 !text-sm">
-            Falar agora
-          </a>
-        </nav>
-      </header>
+      <SiteNav brandName={c.brand.name} logoUrl={c.brand.logoUrl} />
 
       {/* HERO */}
       <section id="topo" className="relative overflow-hidden">
