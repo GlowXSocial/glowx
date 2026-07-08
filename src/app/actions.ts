@@ -53,6 +53,10 @@ export async function submitLead(formData: FormData) {
     process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (hasDb) {
+    // Captura o erro real sem redirecionar dentro do try — o redirect() do Next
+    // lança NEXT_REDIRECT, que seria engolido pelo catch e esconderia o erro
+    // verdadeiro do banco (causa nº1 de "leads pararam de chegar").
+    let insertError: string | null = null;
     try {
       const sb = supabaseAdmin();
       const { error } = await sb.from('leads').insert({
@@ -64,12 +68,17 @@ export async function submitLead(formData: FormData) {
         source: 'landing-page',
         status: 'novo',
       });
-      if (error) {
-        console.error('Erro ao salvar lead:', error.message);
-        redirect('/?error=1');
-      }
+      if (error) insertError = error.message;
     } catch (e: any) {
-      console.error('submitLead: exceção ao salvar lead:', e?.message);
+      insertError = e?.message || String(e);
+    }
+    if (insertError) {
+      console.error('submitLead: erro ao salvar lead:', insertError, {
+        name,
+        email,
+        phone,
+        interest,
+      });
       redirect('/?error=1');
     }
   } else {

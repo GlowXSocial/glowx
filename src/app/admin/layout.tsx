@@ -22,6 +22,7 @@ export default async function AdminLayout({
             </span>
             <nav className="hidden gap-6 text-sm font-medium text-slate-600 md:flex">
               <a href="/admin" className="hover:text-glow-600">Dashboard</a>
+              <a href="/admin/leads" className="hover:text-glow-600">Leads</a>
               <a href="/admin/conteudo" className="hover:text-glow-600">Conteúdo da LP</a>
               <a href="/" className="hover:text-glow-600" target="_blank">Ver site ↗</a>
             </nav>
