@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { supabaseAdmin } from '@/lib/supabase';
+import { isSupabaseConfigured, supabaseAdmin } from '@/lib/supabase';
 import {
   createSession,
   destroySession,
@@ -10,6 +10,12 @@ import {
   verifyPassword,
 } from '@/lib/auth';
 import { saveContent, type Content } from '@/lib/content';
+
+/** Resultado padrão das actions de escrita — nunca lançam pra árvore React. */
+export type ActionResult = { ok: true } | { ok: false; error: string };
+
+const DB_NOT_CONFIGURED =
+  'Banco de dados não configurado. Defina NEXT_PUBLIC_SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY no .env.local para persistir as alterações.';
 
 // -------------------------------------------------------------
 // Autenticação
@@ -42,20 +48,36 @@ export async function submitLead(formData: FormData) {
     redirect('/?error=1');
   }
 
-  const sb = supabaseAdmin();
-  const { error } = await sb.from('leads').insert({
-    name,
-    email,
-    phone,
-    interest,
-    message,
-    source: 'landing-page',
-    status: 'novo',
-  });
+  const hasDb =
+    process.env.NEXT_PUBLIC_SUPABASE_URL &&
+    process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-  if (error) {
-    console.error('Erro ao salvar lead:', error.message);
-    redirect('/?error=1');
+  if (hasDb) {
+    try {
+      const sb = supabaseAdmin();
+      const { error } = await sb.from('leads').insert({
+        name,
+        email,
+        phone,
+        interest,
+        message,
+        source: 'landing-page',
+        status: 'novo',
+      });
+      if (error) {
+        console.error('Erro ao salvar lead:', error.message);
+        redirect('/?error=1');
+      }
+    } catch (e: any) {
+      console.error('submitLead: exceção ao salvar lead:', e?.message);
+      redirect('/?error=1');
+    }
+  } else {
+    // Banco ainda não configurado — registra no log para teste local
+    console.warn(
+      '[modo teste] Lead não persistido (Supabase não configurado):',
+      { name, email, phone, interest, message }
+    );
   }
 
   redirect('/obrigado');
@@ -64,29 +86,66 @@ export async function submitLead(formData: FormData) {
 // -------------------------------------------------------------
 // Painel — salvar conteúdo editado
 // -------------------------------------------------------------
-export async function saveContentAction(content: Content) {
+export async function saveContentAction(content: Content): Promise<ActionResult> {
   const ok = await isAuthenticated();
   if (!ok) redirect('/admin/login');
 
-  await saveContent(content);
+  if (!isSupabaseConfigured()) return { ok: false, error: DB_NOT_CONFIGURED };
+
+  try {
+    await saveContent(content);
+  } catch (e: any) {
+    console.error('saveContentAction: erro ao salvar conteúdo:', e?.message);
+    return { ok: false, error: e?.message || 'Não foi possível salvar o conteúdo.' };
+  }
+
   revalidatePath('/');
   revalidatePath('/obrigado');
   revalidatePath('/admin/conteudo');
+  return { ok: true };
 }
 
 // -------------------------------------------------------------
 // Painel — atualizar status de um lead / excluir
 // -------------------------------------------------------------
-export async function updateLeadStatusAction(id: string, status: string) {
+export async function updateLeadStatusAction(
+  id: string,
+  status: string,
+): Promise<ActionResult> {
   const ok = await isAuthenticated();
   if (!ok) redirect('/admin/login');
-  await supabaseAdmin().from('leads').update({ status }).eq('id', id);
+
+  if (!isSupabaseConfigured()) return { ok: false, error: DB_NOT_CONFIGURED };
+
+  try {
+    const { error } = await supabaseAdmin()
+      .from('leads')
+      .update({ status })
+      .eq('id', id);
+    if (error) throw error;
+  } catch (e: any) {
+    console.error('updateLeadStatusAction: erro ao atualizar lead:', e?.message);
+    return { ok: false, error: e?.message || 'Não foi possível atualizar o lead.' };
+  }
+
   revalidatePath('/admin');
+  return { ok: true };
 }
 
-export async function deleteLeadAction(id: string) {
+export async function deleteLeadAction(id: string): Promise<ActionResult> {
   const ok = await isAuthenticated();
   if (!ok) redirect('/admin/login');
-  await supabaseAdmin().from('leads').delete().eq('id', id);
+
+  if (!isSupabaseConfigured()) return { ok: false, error: DB_NOT_CONFIGURED };
+
+  try {
+    const { error } = await supabaseAdmin().from('leads').delete().eq('id', id);
+    if (error) throw error;
+  } catch (e: any) {
+    console.error('deleteLeadAction: erro ao excluir lead:', e?.message);
+    return { ok: false, error: e?.message || 'Não foi possível excluir o lead.' };
+  }
+
   revalidatePath('/admin');
+  return { ok: true };
 }

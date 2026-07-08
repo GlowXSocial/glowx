@@ -1,5 +1,10 @@
 import { createClient } from '@supabase/supabase-js';
 
+/** True quando URL + service_role key estão definidos (sem lançar). */
+export function isSupabaseConfigured(): boolean {
+  return !!(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
+}
+
 /**
  * Cliente usado no SERVIDOR com a service_role key.
  * Tem acesso total ao banco (ignora RLS) — usar apenas em server components
