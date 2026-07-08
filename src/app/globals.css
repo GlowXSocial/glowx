@@ -1,0 +1,41 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+  --glow-primary: #a81bb3;
+  --glow-accent: #e065ea;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-white text-slate-900 antialiased;
+}
+
+@layer components {
+  .glow-btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-8 py-4 text-base font-semibold text-white shadow-glow transition hover:scale-[1.03] active:scale-100;
+    background: linear-gradient(135deg, var(--glow-primary), var(--glow-accent));
+  }
+
+  .glow-section {
+    @apply mx-auto max-w-6xl px-5;
+  }
+
+  .glow-card {
+    @apply rounded-3xl border border-glow-100 bg-white p-7 shadow-[0_10px_40px_-20px_rgba(168,27,179,0.25)] transition hover:-translate-y-1 hover:shadow-glow;
+  }
+
+  .glow-input {
+    @apply w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-glow-500 focus:ring-2 focus:ring-glow-200;
+  }
+
+  .admin-input {
+    @apply w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-glow-500 focus:ring-2 focus:ring-glow-100;
+  }
+}
